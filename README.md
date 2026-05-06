@@ -124,7 +124,7 @@ def chunkerify(
 
 `chunk_size` is the maximum number of tokens a chunk may contain. It defaults to `None`, in which case it will be set to the same value as the tokenizer's `model_max_length` attribute (minus the number of tokens returned by attempting to tokenize an empty string) if possible, otherwise a `ValueError` will be raised.
 
-`chunking_model` is the name of the [Isaacus enrichment model](https://docs.isaacus.com/models/introduction#enrichment) to use for AI chunking. This argument defaults to `None`, in which case, unless you provide an [Isaacus Legal Graph Schema (ILGS) Document](https://docs.isaacus.com/ilgs/introduction) as input, AI chunking will be disabled.
+`chunking_model` is the name of the [Isaacus enrichment model](https://docs.isaacus.com/models/introduction#enrichment) to use for AI chunking. This argument defaults to `None`, in which case, unless you provide an [Isaacus Legal Document Graph Schema (ILDGS) Document](https://docs.isaacus.com/ildgs/introduction) as input, AI chunking will be disabled.
 
 `isaacus_client` is an instance of the `isaacus.Isaacus` API client to use for AI chunking instead of a client constructed with default parameters. This argument defaults to `None`, in which case a client will be constructed with default parameters if AI chunking is enabled.
 
@@ -165,7 +165,7 @@ def chunk(
 
 `chunk()` splits a text into semantically meaningful chunks of a specified size as determined by the provided token counter.
 
-`text` is the input to be chunked. If you pass an Isaacus Legal Graph Schema (ILGS) Document, AI chunking will occur automatically without re-enriching the document.
+`text` is the input to be chunked. If you pass an Isaacus Legal Document Graph Schema (ILDGS) Document, AI chunking will occur automatically without re-enriching the document.
 
 `chunk_size` is the maximum number of tokens a chunk may contain.
 
@@ -177,7 +177,7 @@ def chunk(
 
 `overlap` specifies the proportion of the chunk size, or, if >=1, the number of tokens, by which chunks should overlap. It defaults to `None`, in which case no overlapping occurs.
 
-`chunking_model` is the name of the [Isaacus enrichment model](https://docs.isaacus.com/models/introduction#enrichment) to use for AI chunking. This argument defaults to `None`, in which case, unless you provide an Isaacus Legal Graph Schema (ILGS) Document as input, AI chunking will be disabled.
+`chunking_model` is the name of the [Isaacus enrichment model](https://docs.isaacus.com/models/introduction#enrichment) to use for AI chunking. This argument defaults to `None`, in which case, unless you provide an Isaacus Legal Document Graph Schema (ILDGS) Document as input, AI chunking will be disabled.
 
 `isaacus_client` is an instance of the `isaacus.Isaacus` API client to use for AI chunking instead of a client constructed with default parameters. This argument defaults to `None`, in which case a client will be constructed with default parameters if AI chunking is enabled.
 
