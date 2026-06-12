@@ -4,14 +4,13 @@ import os
 import re
 import math
 import inspect
+import multiprocessing
 
 from bisect import bisect_left
 from typing import Callable, Sequence, TypeAlias, TYPE_CHECKING
 from functools import partial, lru_cache
 from itertools import accumulate
 from contextlib import suppress
-
-import mpire
 
 from tqdm import tqdm
 
@@ -275,11 +274,11 @@ def chunk(
                 .document
                 for prechunk in prechunks
             ]
-        
+
         else:
             enriched_prechunks = [ilgs_doc]
             prechunk_offsets = [(0, len(text))]
-        
+
         # Hierarchically segment each prechunk, constructing a tree out of extracted spans.
         span_tree: SpanNode = ((0, len(text)), [], None)
 
@@ -613,6 +612,36 @@ def chunk(
     # endregion
 
 
+_worker_chunk_function: "Callable[[str | ILGSDocument], list[str] | tuple[list[str], list[tuple[int, int]]]] | None" = (
+    None
+)
+"""The chunk function used by multiprocessing pool workers, set by `_initialize_worker()` or `_initialize_worker_from_dill()`."""
+
+
+def _initialize_worker(
+    chunk_function: "Callable[[str | ILGSDocument], list[str] | tuple[list[str], list[tuple[int, int]]]]",
+) -> None:
+    """Initialize a multiprocessing pool worker by storing the provided chunk function in a global variable so that workers can access it without it having to be pickled, which would otherwise fail for unpicklable token counters such as closures and lambdas."""
+
+    global _worker_chunk_function
+    _worker_chunk_function = chunk_function
+
+
+def _initialize_worker_from_dill(pickled_chunk_function: bytes) -> None:  # pragma: no cover
+    """Initialize a multiprocessing pool worker by unpickling the provided `dill`-pickled chunk function and storing it in a global variable. Used on systems that do not support forking processes (namely, Windows), where the chunk function must be pickled to be sent to workers and so may not be picklable by the standard library."""
+
+    import dill  # pyright: ignore[reportMissingImports]
+
+    global _worker_chunk_function
+    _worker_chunk_function = dill.loads(pickled_chunk_function)
+
+
+def _chunk_in_worker(text: "str | ILGSDocument") -> list[str] | tuple[list[str], list[tuple[int, int]]]:
+    """Chunk a text in a multiprocessing pool worker using the chunk function stored by `_initialize_worker()` or `_initialize_worker_from_dill()`."""
+
+    return _worker_chunk_function(text)
+
+
 class Chunker:
     def __init__(
         self,
@@ -680,7 +709,9 @@ class Chunker:
 
         chunk_function = self._make_chunk_function(offsets=offsets, overlap=overlap)
 
-        if isinstance(text_or_texts, str) or (isaacus_runtime is not None and isinstance(text_or_texts, ILGSDocument_Runtime)):
+        if isinstance(text_or_texts, str) or (
+            isaacus_runtime is not None and isinstance(text_or_texts, ILGSDocument_Runtime)
+        ):
             return chunk_function(text_or_texts)
 
         if progress and processes == 1:
@@ -690,8 +721,24 @@ class Chunker:
             chunks_and_offsets = [chunk_function(text) for text in text_or_texts]
 
         else:
-            with mpire.WorkerPool(processes, use_dill=True) as pool:
-                chunks_and_offsets = pool.map(chunk_function, [(text,) for text in text_or_texts], progress_bar=progress)
+            # On systems that support forking processes (namely, POSIX systems such as Linux and macOS), fork workers and pass the chunk function to them through the pool initializer so that it is inherited through forking rather than pickled, which would otherwise fail for unpicklable token counters such as closures and lambdas. On systems that do not support forking processes (namely, Windows), spawn workers and serialize the chunk function with `dill`, which, unlike the standard library's `pickle`, is able to serialize such token counters.
+            if "fork" in multiprocessing.get_all_start_methods():
+                context = multiprocessing.get_context("fork")
+                initializer, initargs = _initialize_worker, (chunk_function,)
+
+            else:  # pragma: no cover
+                import dill  # pyright: ignore[reportMissingImports]
+
+                context = multiprocessing.get_context("spawn")
+                initializer, initargs = _initialize_worker_from_dill, (dill.dumps(chunk_function),)
+
+            with context.Pool(processes, initializer=initializer, initargs=initargs) as pool:
+                chunked_texts = pool.imap(_chunk_in_worker, text_or_texts)
+
+                if progress:
+                    chunked_texts = tqdm(chunked_texts, total=len(text_or_texts))
+
+                chunks_and_offsets = list(chunked_texts)
 
         if offsets:
             chunks, offsets_ = zip(*chunks_and_offsets)

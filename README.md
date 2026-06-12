@@ -243,7 +243,7 @@ If you use semchunk for research, please cite it as follows:
   title        = {semchunk: a Python library for semantic chunking},
   year         = {2023},
   url          = {https://github.com/isaacus-dev/semchunk},
-  version      = {4.0.0},
+  version      = {4.1.0},
   publisher    = {Isaacus}
 }
 ```
