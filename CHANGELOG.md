@@ -1,6 +1,10 @@
 ## Changelog 🔄
 All notable changes to semchunk will be documented here. This project adheres to [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.1.0] - 2026-06-12
+### Changed
+- Replaced [`mpire`](https://github.com/sybrenjansen/mpire) with the standard library's `multiprocessing` module for chunking multiple texts with multiple processes. On systems that support forking processes (namely, POSIX systems such as Linux and macOS), this makes [`tqdm`](https://github.com/tqdm/tqdm) semchunk's only dependency. On systems that do not support forking processes (namely, Windows), [`dill`](https://github.com/uqfoundation/dill) is now used to serialize the chunk function for spawned worker processes (as the standard library's `pickle` cannot serialize unpicklable token counters such as closures and lambdas), and so `dill` is now a Windows-only dependency, replacing the heavier `mpire`, which had depended on it.
+
 ## [4.0.0] - 2026-03-23
 ### Added
 - Added a new AI chunking mode to semchunk that leverages Isaacus enrichment models to hierarchically segment texts.
@@ -187,6 +191,7 @@ All notable changes to semchunk will be documented here. This project adheres to
 ### Added
 - Added the `chunk()` function, which splits text into semantically meaningful chunks of a specified size as determined by a provided token counter.
 
+[4.1.0]: https://github.com/isaacus-dev/semchunk/compare/v4.0.0...v4.1.0
 [4.0.0]: https://github.com/isaacus-dev/semchunk/compare/v3.2.5...v4.0.0
 [3.2.5]: https://github.com/isaacus-dev/semchunk/compare/v3.2.4...v3.2.5
 [3.2.4]: https://github.com/isaacus-dev/semchunk/compare/v3.2.3...v3.2.4
