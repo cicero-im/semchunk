@@ -1,7 +1,7 @@
 ## Changelog 🔄
 All notable changes to semchunk will be documented here. This project adheres to [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [4.1.1] - 2026-06-12
+## [4.1.1] - 2026-06-13
 ### Changed
 - Sped up chunking, particularly of real-world documents at typical chunk sizes, by only ever materializing the comparatively rare multi-character whitespace runs when identifying the most structurally meaningful splitter, sparing `_split_text()` from materializing the far more numerous single-character runs (such as the single spaces between words) that can never be the longest run unless no longer run exists.
 - Further sped up chunking by fusing the construction of splits' start offsets into a single pass and by iterating directly from the start of one chunk to the next rather than visiting, and skipping over, every split already merged into a chunk.
