@@ -1,6 +1,11 @@
 ## Changelog 🔄
 All notable changes to semchunk will be documented here. This project adheres to [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.1.1] - 2026-06-12
+### Changed
+- Sped up chunking, particularly of real-world documents at typical chunk sizes, by only ever materializing the comparatively rare multi-character whitespace runs when identifying the most structurally meaningful splitter, sparing `_split_text()` from materializing the far more numerous single-character runs (such as the single spaces between words) that can never be the longest run unless no longer run exists.
+- Further sped up chunking by fusing the construction of splits' start offsets into a single pass and by iterating directly from the start of one chunk to the next rather than visiting, and skipping over, every split already merged into a chunk.
+
 ## [4.1.0] - 2026-06-12
 ### Changed
 - Replaced [`mpire`](https://github.com/sybrenjansen/mpire) with the standard library's `multiprocessing` module for chunking multiple texts with multiple processes. On systems that support forking processes (namely, POSIX systems such as Linux and macOS), this makes [`tqdm`](https://github.com/tqdm/tqdm) semchunk's only dependency. On systems that do not support forking processes (namely, Windows), [`dill`](https://github.com/uqfoundation/dill) is now used to serialize the chunk function for spawned worker processes (as the standard library's `pickle` cannot serialize unpicklable token counters such as closures and lambdas), and so `dill` is now a Windows-only dependency, replacing the heavier `mpire`, which had depended on it.
@@ -191,6 +196,7 @@ All notable changes to semchunk will be documented here. This project adheres to
 ### Added
 - Added the `chunk()` function, which splits text into semantically meaningful chunks of a specified size as determined by a provided token counter.
 
+[4.1.1]: https://github.com/isaacus-dev/semchunk/compare/v4.1.0...v4.1.1
 [4.1.0]: https://github.com/isaacus-dev/semchunk/compare/v4.0.0...v4.1.0
 [4.0.0]: https://github.com/isaacus-dev/semchunk/compare/v3.2.5...v4.0.0
 [3.2.5]: https://github.com/isaacus-dev/semchunk/compare/v3.2.4...v3.2.5
